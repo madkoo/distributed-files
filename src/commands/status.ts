@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import fg from 'fast-glob';
 import { requireManifest, resolvePath } from '../config';
 import { getCacheDir } from '../cache';
-import { fileHash } from '../sync';
+import { fileHash, isGlobPattern, globBase } from '../sync';
 import { StatusResult, ManifestEntry } from '../types';
 
 function collectDirectoryEntries(rootDir: string, currentDir: string, entries: string[]): void {
@@ -55,6 +56,24 @@ function determineState(entry: ManifestEntry): StatusResult['state'] {
 
   if (!fs.existsSync(cacheDir)) {
     return 'missing';
+  }
+
+  // Glob pattern: expand and check each matched file
+  if (isGlobPattern(entry.source)) {
+    if (!fs.existsSync(cacheDir)) return 'missing';
+    const base = globBase(entry.source);
+    const absBase = path.join(cacheDir, base);
+    const matches = fg.sync(entry.source, { cwd: cacheDir, absolute: true, onlyFiles: true });
+    if (matches.length === 0) return 'missing';
+    for (const absMatch of matches) {
+      const relPath = path.relative(absBase, absMatch);
+      const destFile = path.join(destinationPath, relPath);
+      if (!fs.existsSync(destFile)) return 'missing';
+      const sourceDigest = fileHash(absMatch);
+      const destDigest = fileHash(destFile);
+      if (sourceDigest !== destDigest) return 'outdated';
+    }
+    return 'current';
   }
 
   if (!fs.existsSync(destinationPath)) {

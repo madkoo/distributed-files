@@ -17,6 +17,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main
+        run: |
+          git fetch origin main
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag commit is on main. Proceeding with release."
+          else
+            echo "Error: Tag commit is not on main. Aborting release."
+            exit 1
+          fi
+
+      - name: Verify package.json version matches tag
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG_VERSION="${GITHUB_REF_NAME}"
+          echo "package.json version: $PKG_VERSION"
+          echo "Git tag: $TAG_VERSION"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: package.json version ($PKG_VERSION) does not match git tag ($TAG_VERSION)."
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -35,7 +58,7 @@ jobs:
         run: npm pack
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

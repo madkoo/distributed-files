@@ -1099,7 +1099,7 @@
   <script>
     // Copy install command
     function copyInstall(el) {
-      navigator.clipboard.writeText('npm install -g dfiles').then(() => {
+      navigator.clipboard.writeText('npm install -g @madkoo/dfiles').then(() => {
         el.classList.add('copied');
         setTimeout(() => el.classList.remove('copied'), 1800);
       });

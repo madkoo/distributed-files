@@ -32,7 +32,7 @@ jobs:
 
       - name: Verify package.json version matches tag
         run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          PKG_VERSION="v$(node -p 'require("./package.json").version')"
           TAG_VERSION="${GITHUB_REF_NAME}"
           echo "package.json version: $PKG_VERSION"
           echo "Git tag: $TAG_VERSION"

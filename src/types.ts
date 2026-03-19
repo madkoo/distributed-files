@@ -6,7 +6,7 @@ export interface ManifestEntry {
   repo: string;
   /** Git branch, default "main" */
   branch: string;
-  /** Repo-relative path to the file or directory: "skills/canvas-design/SKILL.md" */
+  /** Repo-relative path, directory, or glob pattern: "skills/canvas-design/SKILL.md" or "skills/canvas-design/**" */
   source: string;
   /** Absolute or ~-prefixed local destination path */
   destination: string;

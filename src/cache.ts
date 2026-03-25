@@ -78,14 +78,57 @@ export async function ensureCached(repoUrl: string, branch: string): Promise<str
   }
 
   const git = simpleGit(cacheDir);
+
+  // Step 1: clear any stale index lock left by a previously interrupted operation
+  const lockFile = path.join(cacheDir, '.git', 'index.lock');
+  if (fs.existsSync(lockFile)) {
+    fs.rmSync(lockFile);
+  }
+
+  // Step 2: fetch with --depth 1 to avoid deepening the shallow clone
   try {
-    await git.fetch('origin', branch);
-    await git.checkout(branch);
+    await git.fetch('origin', branch, ['--depth', '1']);
+  } catch (error) {
+    const msg = toErrorMessage(error);
+    // Branch deleted or renamed on remote — re-clone won't help either, surface clearly
+    if (/couldn't find remote ref|invalid refspec/i.test(msg)) {
+      throw new Error(
+        `Branch "${branch}" not found on remote "${repoUrl}". It may have been deleted or renamed.`
+      );
+    }
+    throw new Error(
+      `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`
+    );
+  }
+
+  // Step 3: checkout the branch
+  await git.checkout(branch);
+
+  // Step 4: try pull; on fast-forward failure use reset --hard (no extra network call)
+  try {
     await git.pull('origin', branch);
   } catch (error) {
-    throw new Error(
-      `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${toErrorMessage(error)}`
-    );
+    const msg = toErrorMessage(error);
+    if (/not possible to fast.forward|not a fast.forward/i.test(msg)) {
+      // Primary recovery: reset to the already-fetched remote tip
+      try {
+        await git.reset(['--hard', `origin/${branch}`]);
+      } catch {
+        // Last resort: corrupt local repo — wipe and re-clone
+        fs.rmSync(cacheDir, { recursive: true, force: true });
+        try {
+          await simpleGit().clone(repoUrl, cacheDir, ['--depth', '1', '--branch', branch]);
+        } catch (cloneError) {
+          throw new Error(
+            `Failed to re-clone repository "${repoUrl}" (branch "${branch}") after unrecoverable cache state: ${toErrorMessage(cloneError)}`
+          );
+        }
+      }
+    } else {
+      throw new Error(
+        `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`
+      );
+    }
   }
 
   return cacheDir;

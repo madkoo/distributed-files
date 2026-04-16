@@ -1,7 +1,7 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 
 // ---------------------------------------------------------------------------
 // Module-level mock — must appear before the import of the module under test
@@ -17,7 +17,7 @@ const mockGit = {
 
 vi.mock('simple-git', () => ({ default: vi.fn(() => mockGit) }));
 
-import { getRepoHash, getCacheDir, CACHE_BASE, ensureCached } from '../src/cache';
+import { CACHE_BASE, ensureCached, getCacheDir, getRepoHash } from '../src/cache';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -28,20 +28,24 @@ const BRANCH = 'main';
 
 const tmpDirs: string[] = [];
 
-function makeTempDir(): string {
+function _makeTempDir(): string {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'dfiles-cache-test-'));
   tmpDirs.push(d);
   return d;
 }
 
 afterEach(() => {
-  tmpDirs.forEach(d => fs.rmSync(d, { recursive: true, force: true }));
+  tmpDirs.forEach((d) => {
+    fs.rmSync(d, { recursive: true, force: true });
+  });
   tmpDirs.length = 0;
   vi.restoreAllMocks();
 });
 
 beforeEach(() => {
-  Object.values(mockGit).forEach(m => m.mockReset().mockResolvedValue(undefined));
+  Object.values(mockGit).forEach((m) => {
+    m.mockReset().mockResolvedValue(undefined);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -83,11 +87,12 @@ describe('ensureCached — not-cached path', () => {
     const result = await ensureCached(TEST_URL, BRANCH);
 
     // Assert
-    expect(mockGit.clone).toHaveBeenCalledWith(
-      TEST_URL,
-      cacheDir,
-      ['--depth', '1', '--branch', BRANCH],
-    );
+    expect(mockGit.clone).toHaveBeenCalledWith(TEST_URL, cacheDir, [
+      '--depth',
+      '1',
+      '--branch',
+      BRANCH,
+    ]);
     expect(result).toBe(cacheDir);
   });
 
@@ -103,11 +108,12 @@ describe('ensureCached — not-cached path', () => {
 
     // Assert — real rmSync ran so the dir is gone, then clone was called
     expect(fs.existsSync(cacheDir)).toBe(false);
-    expect(mockGit.clone).toHaveBeenCalledWith(
-      TEST_URL,
-      cacheDir,
-      ['--depth', '1', '--branch', BRANCH],
-    );
+    expect(mockGit.clone).toHaveBeenCalledWith(TEST_URL, cacheDir, [
+      '--depth',
+      '1',
+      '--branch',
+      BRANCH,
+    ]);
   });
 
   it('throws an error containing "Failed to clone repository" when clone rejects', async () => {
@@ -205,7 +211,9 @@ describe('ensureCached — cached path', () => {
       mockGit.fetch.mockRejectedValue(new Error('network timeout'));
 
       // Act / Assert
-      await expect(ensureCached(TEST_URL, BRANCH)).rejects.toThrow('Failed to update cached repository');
+      await expect(ensureCached(TEST_URL, BRANCH)).rejects.toThrow(
+        'Failed to update cached repository',
+      );
     });
   });
 
@@ -277,7 +285,9 @@ describe('ensureCached — cached path', () => {
       mockGit.pull.mockRejectedValue(new Error('connection refused'));
 
       // Act / Assert
-      await expect(ensureCached(TEST_URL, BRANCH)).rejects.toThrow('Failed to update cached repository');
+      await expect(ensureCached(TEST_URL, BRANCH)).rejects.toThrow(
+        'Failed to update cached repository',
+      );
     });
   });
 });

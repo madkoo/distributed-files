@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import simpleGit from 'simple-git';
 
 export const CACHE_BASE = path.join(os.homedir(), '.dfiles', 'cache');
@@ -70,7 +70,7 @@ export async function ensureCached(repoUrl: string, branch: string): Promise<str
       await simpleGit().clone(repoUrl, cacheDir, ['--depth', '1', '--branch', branch]);
     } catch (error) {
       throw new Error(
-        `Failed to clone repository "${repoUrl}" (branch "${branch}") into cache "${cacheDir}": ${toErrorMessage(error)}`
+        `Failed to clone repository "${repoUrl}" (branch "${branch}") into cache "${cacheDir}": ${toErrorMessage(error)}`,
       );
     }
 
@@ -98,11 +98,11 @@ export async function ensureCached(repoUrl: string, branch: string): Promise<str
     // Branch deleted or renamed on remote — re-clone won't help either, surface clearly
     if (/couldn't find remote ref|invalid refspec/i.test(msg)) {
       throw new Error(
-        `Branch "${branch}" not found on remote "${repoUrl}". It may have been deleted or renamed.`
+        `Branch "${branch}" not found on remote "${repoUrl}". It may have been deleted or renamed.`,
       );
     }
     throw new Error(
-      `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`
+      `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`,
     );
   }
 
@@ -111,7 +111,7 @@ export async function ensureCached(repoUrl: string, branch: string): Promise<str
     await git.checkout(['-B', branch, `origin/${branch}`]);
   } catch (error) {
     throw new Error(
-      `Failed to checkout branch "${branch}" in cached repository "${repoUrl}" at "${cacheDir}": ${toErrorMessage(error)}`
+      `Failed to checkout branch "${branch}" in cached repository "${repoUrl}" at "${cacheDir}": ${toErrorMessage(error)}`,
     );
   }
 
@@ -131,13 +131,13 @@ export async function ensureCached(repoUrl: string, branch: string): Promise<str
           await simpleGit().clone(repoUrl, cacheDir, ['--depth', '1', '--branch', branch]);
         } catch (cloneError) {
           throw new Error(
-            `Failed to re-clone repository "${repoUrl}" (branch "${branch}") after unrecoverable cache state: ${toErrorMessage(cloneError)}`
+            `Failed to re-clone repository "${repoUrl}" (branch "${branch}") after unrecoverable cache state: ${toErrorMessage(cloneError)}`,
           );
         }
       }
     } else {
       throw new Error(
-        `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`
+        `Failed to update cached repository "${repoUrl}" (branch "${branch}") at "${cacheDir}": ${msg}`,
       );
     }
   }

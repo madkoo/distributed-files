@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { MANIFEST_FILENAME, saveManifest } from '../config';
-import { Manifest } from '../types';
+import type { Manifest } from '../types';
 
 export async function initCommand(directory: string | undefined): Promise<void> {
   const targetDir = path.resolve(directory ?? process.cwd());

@@ -1,9 +1,9 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import fg from 'fast-glob';
-import { ManifestEntry } from './types';
 import { resolvePath } from './config';
+import type { ManifestEntry } from './types';
 
 /**
  * Returns SHA-256 hash of file contents, or null if file doesn't exist.
@@ -43,7 +43,7 @@ export function globBase(pattern: string): string {
  */
 export async function syncEntry(
   entry: ManifestEntry,
-  cacheDir: string
+  cacheDir: string,
 ): Promise<'updated' | 'unchanged'> {
   const destPath = resolvePath(entry.destination);
 
@@ -83,7 +83,7 @@ export async function syncEntry(
     sourceStat = fs.statSync(sourcePath);
   } catch {
     throw new Error(
-      `Source path "${entry.source}" does not exist in cache "${cacheDir}" (resolved: "${sourcePath}").`
+      `Source path "${entry.source}" does not exist in cache "${cacheDir}" (resolved: "${sourcePath}").`,
     );
   }
 
@@ -107,6 +107,6 @@ export async function syncEntry(
   }
 
   throw new Error(
-    `Source path "${sourcePath}" in cache is neither a regular file nor a directory and cannot be synced.`
+    `Source path "${sourcePath}" in cache is neither a regular file nor a directory and cannot be synced.`,
   );
 }

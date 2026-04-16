@@ -1,6 +1,6 @@
-import * as path from 'path';
+import * as path from 'node:path';
 import { requireManifest, saveManifest } from '../config';
-import { ManifestEntry } from '../types';
+import type { ManifestEntry } from '../types';
 
 interface AddOptions {
   branch: string;
@@ -45,7 +45,7 @@ export async function addCommand(
   repo: string,
   source: string,
   destination: string,
-  options: AddOptions
+  options: AddOptions,
 ): Promise<void> {
   const { dir, manifest } = requireManifest();
 
@@ -54,8 +54,7 @@ export async function addCommand(
   }
 
   const duplicate = manifest.entries.find(
-    (entry) =>
-      entry.repo === repo && entry.source === source && entry.destination === destination
+    (entry) => entry.repo === repo && entry.source === source && entry.destination === destination,
   );
 
   if (duplicate) {

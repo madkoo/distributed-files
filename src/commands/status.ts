@@ -1,11 +1,11 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import fg from 'fast-glob';
-import { requireManifest, resolvePath } from '../config';
 import { getCacheDir } from '../cache';
-import { fileHash, isGlobPattern, globBase } from '../sync';
-import { StatusResult, ManifestEntry } from '../types';
+import { requireManifest, resolvePath } from '../config';
+import { fileHash, globBase, isGlobPattern } from '../sync';
+import type { ManifestEntry, StatusResult } from '../types';
 
 function collectDirectoryEntries(rootDir: string, currentDir: string, entries: string[]): void {
   const children = fs.readdirSync(currentDir, { withFileTypes: true });
@@ -140,9 +140,7 @@ export async function statusCommand(): Promise<void> {
   });
 
   const formatRow = (values: readonly string[]): string => {
-    return values
-      .map((value, index) => value.padEnd(widths[index]))
-      .join('  ');
+    return values.map((value, index) => value.padEnd(widths[index])).join('  ');
   };
 
   console.log(formatRow(headers));

@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { Manifest } from './types';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import type { Manifest } from './types';
 
 export const MANIFEST_FILENAME = 'dfiles.json';
 
@@ -84,7 +84,7 @@ export function loadManifest(dir: string): Manifest {
 
   if (!fs.existsSync(manifestPath)) {
     throw new Error(
-      `Manifest file not found at "${manifestPath}". Run "dfiles init" in your project root first.`
+      `Manifest file not found at "${manifestPath}". Run "dfiles init" in your project root first.`,
     );
   }
 
@@ -99,7 +99,7 @@ export function loadManifest(dir: string): Manifest {
 
   if (!isManifest(parsed)) {
     throw new Error(
-      `Manifest at "${manifestPath}" is malformed. Expected shape: { "version": 1, "entries": ManifestEntry[] }.`
+      `Manifest at "${manifestPath}" is malformed. Expected shape: { "version": 1, "entries": ManifestEntry[] }.`,
     );
   }
 
@@ -122,7 +122,7 @@ export function requireManifest(): { dir: string; manifest: Manifest } {
   const dir = findManifestDir();
   if (!dir) {
     throw new Error(
-      `No ${MANIFEST_FILENAME} found in this directory or any parent directory. Run "dfiles init" in your project root first.`
+      `No ${MANIFEST_FILENAME} found in this directory or any parent directory. Run "dfiles init" in your project root first.`,
     );
   }
 

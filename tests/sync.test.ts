@@ -1,7 +1,7 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 import { globBase, isGlobPattern, syncEntry } from '../src/sync';
 
 // ---------------------------------------------------------------------------
@@ -72,8 +72,14 @@ describe('syncEntry (glob patterns)', () => {
     fs.writeFileSync(path.join(cacheDir, 'skills/canvas/examples/demo.md'), '# Demo');
 
     const result = await syncEntry(
-      { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', source: 'skills/canvas/**', destination: destDir },
-      cacheDir
+      {
+        id: 'test',
+        repo: 'https://github.com/org/repo',
+        branch: 'main',
+        source: 'skills/canvas/**',
+        destination: destDir,
+      },
+      cacheDir,
     );
 
     expect(result).toBe('updated');
@@ -90,8 +96,14 @@ describe('syncEntry (glob patterns)', () => {
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), '# Skill');
 
     const result = await syncEntry(
-      { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', source: 'skills/canvas/**', destination: destDir },
-      cacheDir
+      {
+        id: 'test',
+        repo: 'https://github.com/org/repo',
+        branch: 'main',
+        source: 'skills/canvas/**',
+        destination: destDir,
+      },
+      cacheDir,
     );
 
     expect(result).toBe('unchanged');
@@ -108,8 +120,14 @@ describe('syncEntry (glob patterns)', () => {
     fs.writeFileSync(path.join(destDir, 'README.md'), '# Readme');
 
     const result = await syncEntry(
-      { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', source: 'skills/canvas/**', destination: destDir },
-      cacheDir
+      {
+        id: 'test',
+        repo: 'https://github.com/org/repo',
+        branch: 'main',
+        source: 'skills/canvas/**',
+        destination: destDir,
+      },
+      cacheDir,
     );
 
     expect(result).toBe('updated');
@@ -124,8 +142,14 @@ describe('syncEntry (glob patterns)', () => {
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     const result = await syncEntry(
-      { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', source: 'nonexistent/**', destination: destDir },
-      cacheDir
+      {
+        id: 'test',
+        repo: 'https://github.com/org/repo',
+        branch: 'main',
+        source: 'nonexistent/**',
+        destination: destDir,
+      },
+      cacheDir,
     );
 
     expect(result).toBe('unchanged');
@@ -142,8 +166,14 @@ describe('syncEntry (glob patterns)', () => {
     fs.writeFileSync(path.join(cacheDir, 'skills/canvas/image.png'), 'binary');
 
     await syncEntry(
-      { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', source: 'skills/canvas/*.md', destination: destDir },
-      cacheDir
+      {
+        id: 'test',
+        repo: 'https://github.com/org/repo',
+        branch: 'main',
+        source: 'skills/canvas/*.md',
+        destination: destDir,
+      },
+      cacheDir,
     );
 
     expect(fs.existsSync(path.join(destDir, 'SKILL.md'))).toBe(true);

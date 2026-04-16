@@ -1,7 +1,7 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
 
 vi.mock('../src/cache', () => ({
   getCacheDir: vi.fn(),
@@ -23,7 +23,9 @@ function makeTempDir(): string {
   return dir;
 }
 
-function makeEntry(overrides: Partial<ManifestEntry> & { source: string; destination: string }): ManifestEntry {
+function makeEntry(
+  overrides: Partial<ManifestEntry> & { source: string; destination: string },
+): ManifestEntry {
   return { id: 'test', repo: 'https://github.com/org/repo', branch: 'main', ...overrides };
 }
 
@@ -44,7 +46,9 @@ describe('determineState (glob patterns)', () => {
     const destDir = makeTempDir();
     vi.mocked(getCacheDir).mockReturnValue(cacheDir);
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('missing');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'missing',
+    );
   });
 
   it('returns missing when glob matches no files in cache', () => {
@@ -52,7 +56,9 @@ describe('determineState (glob patterns)', () => {
     const destDir = makeTempDir();
     vi.mocked(getCacheDir).mockReturnValue(cacheDir);
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('missing');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'missing',
+    );
   });
 
   it('returns missing when a matched file is absent from destination', () => {
@@ -64,7 +70,9 @@ describe('determineState (glob patterns)', () => {
     fs.writeFileSync(path.join(cacheDir, 'skills/canvas/SKILL.md'), '# Skill');
     // destDir exists but SKILL.md is not there
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('missing');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'missing',
+    );
   });
 
   it('returns outdated when a matched file differs from destination', () => {
@@ -76,7 +84,9 @@ describe('determineState (glob patterns)', () => {
     fs.writeFileSync(path.join(cacheDir, 'skills/canvas/SKILL.md'), '# Updated Skill');
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), '# Old Skill');
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('outdated');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'outdated',
+    );
   });
 
   it('returns current when all matched files are identical to destination', () => {
@@ -91,7 +101,9 @@ describe('determineState (glob patterns)', () => {
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), '# Skill');
     fs.writeFileSync(path.join(destDir, 'examples/demo.md'), '# Demo');
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('current');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'current',
+    );
   });
 
   it('returns outdated when a nested file differs', () => {
@@ -106,6 +118,8 @@ describe('determineState (glob patterns)', () => {
     fs.writeFileSync(path.join(destDir, 'SKILL.md'), '# Skill');
     fs.writeFileSync(path.join(destDir, 'examples/demo.md'), '# Old Demo');
 
-    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe('outdated');
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'outdated',
+    );
   });
 });

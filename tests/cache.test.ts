@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,12 +26,6 @@ const TEST_URL = 'https://test.example.com/repo';
 const BRANCH = 'main';
 
 const tmpDirs: string[] = [];
-
-function _makeTempDir(): string {
-  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'dfiles-cache-test-'));
-  tmpDirs.push(d);
-  return d;
-}
 
 afterEach(() => {
   tmpDirs.forEach((d) => {

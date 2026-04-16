@@ -1,6 +1,6 @@
 {
   "name": "@madkoo/dfiles",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Manage specific files/folders from multiple git repositories",
   "bin": {
     "dfiles": "./dist/index.js"

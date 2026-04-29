@@ -1,15 +1,20 @@
 {
   "name": "@madkoo/dfiles",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Manage specific files/folders from multiple git repositories",
   "bin": {
     "dfiles": "./dist/index.js"
   },
   "main": "./dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
+    "lint": "biome check src/ tests/",
+    "lint:fix": "biome check --fix src/ tests/",
+    "format": "biome format --write src/ tests/",
     "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
@@ -19,9 +24,10 @@
     "simple-git": "^3.22.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@types/node": "^25.5.0",
     "ts-node": "^10.9.0",
-    "typescript": "^5.4.0",
+    "typescript": "^6.0.2",
     "vitest": "^4.0.0"
   },
   "engines": {

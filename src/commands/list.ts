@@ -44,9 +44,7 @@ export async function listCommand(options: ListOptions): Promise<void> {
   });
 
   const formatRow = (values: string[]): string => {
-    return values
-      .map((value, index) => value.padEnd(widths[index]))
-      .join('  ');
+    return values.map((value, index) => value.padEnd(widths[index])).join('  ');
   };
 
   console.log(formatRow(columns));

@@ -1,7 +1,7 @@
-import { requireManifest } from '../config';
 import { ensureCached } from '../cache';
+import { requireManifest } from '../config';
 import { syncEntry } from '../sync';
-import { PullResult, ManifestEntry } from '../types';
+import type { ManifestEntry, PullResult } from '../types';
 
 interface PullOptions {
   dryRun?: boolean;
@@ -50,18 +50,25 @@ function printSummary(results: PullResult[]): void {
     return;
   }
 
-  const statusWidth = Math.max('unchanged'.length, ...results.map((result) => result.status.length));
+  const statusWidth = Math.max(
+    'unchanged'.length,
+    ...results.map((result) => result.status.length),
+  );
   const idWidth = Math.max(...results.map((result) => result.entry.id.length));
 
   for (const result of results) {
     if (result.status === 'error') {
       const errorText = result.error ?? 'Unknown error';
-      console.log(`✗ ${'error'.padEnd(statusWidth)}  ${result.entry.id.padEnd(idWidth)}  ${errorText}`);
+      console.log(
+        `✗ ${'error'.padEnd(statusWidth)}  ${result.entry.id.padEnd(idWidth)}  ${errorText}`,
+      );
       continue;
     }
 
     const marker = result.status === 'updated' ? '✓' : ' ';
-    console.log(`${marker} ${result.status.padEnd(statusWidth)}  ${result.entry.id.padEnd(idWidth)}  ${result.entry.destination}`);
+    console.log(
+      `${marker} ${result.status.padEnd(statusWidth)}  ${result.entry.id.padEnd(idWidth)}  ${result.entry.destination}`,
+    );
   }
 }
 
@@ -78,7 +85,9 @@ export async function pullCommand(ids: string[], options: PullOptions): Promise<
 
     if (options.dryRun) {
       for (const entry of groupEntries) {
-        console.log(`[dry-run] Would pull ${entry.source} from ${entry.repo} → ${entry.destination}`);
+        console.log(
+          `[dry-run] Would pull ${entry.source} from ${entry.repo} → ${entry.destination}`,
+        );
         results.push({ entry, status: 'unchanged' });
       }
       continue;

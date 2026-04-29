@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { initCommand } from './commands/init';
 import { addCommand } from './commands/add';
+import { initCommand } from './commands/init';
+import { listCommand } from './commands/list';
 import { pullCommand } from './commands/pull';
 import { statusCommand } from './commands/status';
-import { listCommand } from './commands/list';
 import { requireManifest, saveManifest } from './config';
 
 const program = new Command();
@@ -37,10 +37,10 @@ program
       repo: string,
       source: string,
       destination: string,
-      options: { branch: string; id?: string }
+      options: { branch: string; id?: string },
     ) => {
       await addCommand(repo, source, destination, options);
-    }
+    },
   );
 
 // pull command

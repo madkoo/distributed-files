@@ -6,6 +6,19 @@ import { resolvePath } from './config';
 import type { ManifestEntry } from './types';
 
 /**
+ * Throws if `filePath` is not located inside `containingDir`.
+ * Prevents path-traversal attacks where user-controlled values (e.g. entry.source)
+ * could reference files outside the intended directory boundary.
+ */
+export function assertPathWithin(filePath: string, containingDir: string, label: string): void {
+  const resolved = path.resolve(filePath);
+  const base = path.resolve(containingDir);
+  if (resolved !== base && !resolved.startsWith(base + path.sep)) {
+    throw new Error(`${label} escapes the expected directory boundary.`);
+  }
+}
+
+/**
  * Returns SHA-256 hash of file contents, or null if file doesn't exist.
  */
 export function fileHash(filePath: string): string | null {
@@ -51,6 +64,7 @@ export async function syncEntry(
   if (isGlobPattern(entry.source)) {
     const base = globBase(entry.source);
     const absBase = path.join(cacheDir, base);
+    assertPathWithin(absBase, cacheDir, `Glob base "${base}"`);
     const matches = fg.sync(entry.source, { cwd: cacheDir, absolute: true, onlyFiles: true });
 
     if (matches.length === 0) {
@@ -60,8 +74,10 @@ export async function syncEntry(
 
     let anyUpdated = false;
     for (const absMatch of matches) {
+      assertPathWithin(absMatch, cacheDir, `Glob match "${absMatch}"`);
       const relPath = path.relative(absBase, absMatch);
       const destFile = path.join(destPath, relPath);
+      assertPathWithin(destFile, destPath, `Destination file "${relPath}"`);
       const sourceDigest = fileHash(absMatch);
       const destDigest = fileHash(destFile);
 
@@ -77,6 +93,7 @@ export async function syncEntry(
   }
 
   const sourcePath = path.join(cacheDir, entry.source);
+  assertPathWithin(sourcePath, cacheDir, `Source path "${entry.source}"`);
 
   let sourceStat: fs.Stats;
   try {

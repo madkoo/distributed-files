@@ -4,7 +4,14 @@ import * as path from 'node:path';
 import fg from 'fast-glob';
 import { getCacheDir } from '../cache';
 import { requireManifest, resolvePath } from '../config';
-import { fileHash, globBase, isGlobPattern } from '../sync';
+import {
+  assertDestinationPath,
+  assertDirectoryCopyPaths,
+  assertPathWithin,
+  fileHash,
+  globBase,
+  isGlobPattern,
+} from '../sync';
 import type { ManifestEntry, StatusResult } from '../types';
 
 function collectDirectoryEntries(rootDir: string, currentDir: string, entries: string[]): void {
@@ -51,10 +58,18 @@ function stateLabel(state: StatusResult['state']): string {
 
 export function determineState(entry: ManifestEntry): StatusResult['state'] {
   const cacheDir = getCacheDir(entry.repo);
-  const sourcePath = path.join(cacheDir, entry.source);
-  const destinationPath = resolvePath(entry.destination);
+  let destinationPath = resolvePath(entry.destination);
 
   if (!fs.existsSync(cacheDir)) {
+    return 'missing';
+  }
+
+  try {
+    destinationPath = assertDestinationPath(
+      destinationPath,
+      `Destination path "${entry.destination}"`,
+    );
+  } catch {
     return 'missing';
   }
 
@@ -63,17 +78,49 @@ export function determineState(entry: ManifestEntry): StatusResult['state'] {
     if (!fs.existsSync(cacheDir)) return 'missing';
     const base = globBase(entry.source);
     const absBase = path.join(cacheDir, base);
+    try {
+      assertPathWithin(absBase, cacheDir, `Glob base "${base}"`);
+    } catch {
+      return 'missing';
+    }
     const matches = fg.sync(entry.source, { cwd: cacheDir, absolute: true, onlyFiles: true });
     if (matches.length === 0) return 'missing';
     for (const absMatch of matches) {
+      let sourceMatch: string;
+      try {
+        sourceMatch = assertPathWithin(absMatch, cacheDir, `Glob match "${absMatch}"`);
+      } catch {
+        return 'missing';
+      }
       const relPath = path.relative(absBase, absMatch);
       const destFile = path.join(destinationPath, relPath);
-      if (!fs.existsSync(destFile)) return 'missing';
-      const sourceDigest = fileHash(absMatch);
-      const destDigest = fileHash(destFile);
+      let canonicalDestFile: string;
+      try {
+        canonicalDestFile = assertPathWithin(
+          destFile,
+          destinationPath,
+          `Destination file "${relPath}"`,
+        );
+      } catch {
+        return 'missing';
+      }
+      if (!fs.existsSync(canonicalDestFile)) return 'missing';
+      const sourceDigest = fileHash(sourceMatch);
+      const destDigest = fileHash(canonicalDestFile);
       if (sourceDigest !== destDigest) return 'outdated';
     }
     return 'current';
+  }
+
+  let sourcePath: string;
+  try {
+    sourcePath = assertPathWithin(
+      path.join(cacheDir, entry.source),
+      cacheDir,
+      `Source path "${entry.source}"`,
+    );
+  } catch {
+    return 'missing';
   }
 
   if (!fs.existsSync(destinationPath)) {
@@ -102,6 +149,12 @@ export function determineState(entry: ManifestEntry): StatusResult['state'] {
       if (!fs.statSync(destinationPath).isDirectory()) {
         return 'outdated';
       }
+    } catch {
+      return 'missing';
+    }
+
+    try {
+      assertDirectoryCopyPaths(sourcePath, destinationPath, cacheDir, destinationPath);
     } catch {
       return 'missing';
     }

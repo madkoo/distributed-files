@@ -155,6 +155,12 @@ function copyDirectoryContents(
     `Destination path "${destinationDir}"`,
   );
 
+  if (isPathWithin(canonicalDestinationDir, canonicalSourceDir)) {
+    throw new Error(
+      `Destination directory "${destinationDir}" must not be inside source directory "${sourceDir}".`,
+    );
+  }
+
   if (activeDirectories.has(canonicalSourceDir)) {
     throw new Error(`Source directory "${sourceDir}" contains a circular symbolic link.`);
   }

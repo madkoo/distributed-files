@@ -119,7 +119,7 @@ export function assertDestinationPath(filePath: string, label: string): string {
   return canonicalPath;
 }
 
-function assertDirectoryCopyPaths(
+export function assertDirectoryCopyPaths(
   sourceDir: string,
   destinationDir: string,
   sourceRoot: string,

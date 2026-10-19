@@ -141,6 +141,20 @@ describe('determineState (glob patterns)', () => {
 });
 
 describe('determineState (path validation)', () => {
+  it('returns missing when a directory source contains a symlink outside the cache', () => {
+    const cacheDir = makeTempDir();
+    const destDir = makeTempDir();
+    const outsideDir = makeTempDir();
+    const sourceDir = path.join(cacheDir, 'source');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.writeFileSync(path.join(outsideDir, 'external.txt'), 'external content');
+    fs.symlinkSync(path.join(outsideDir, 'external.txt'), path.join(sourceDir, 'external.txt'));
+
+    expect(determineState(makeEntry({ source: 'source', destination: destDir }))).toBe('missing');
+  });
+
   it('returns missing when a source symlink resolves outside the cache', () => {
     const cacheDir = makeTempDir();
     const destDir = makeTempDir();

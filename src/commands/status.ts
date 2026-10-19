@@ -6,6 +6,7 @@ import { getCacheDir } from '../cache';
 import { requireManifest, resolvePath } from '../config';
 import {
   assertDestinationPath,
+  assertDirectoryCopyPaths,
   assertPathWithin,
   fileHash,
   globBase,
@@ -148,6 +149,12 @@ export function determineState(entry: ManifestEntry): StatusResult['state'] {
       if (!fs.statSync(destinationPath).isDirectory()) {
         return 'outdated';
       }
+    } catch {
+      return 'missing';
+    }
+
+    try {
+      assertDirectoryCopyPaths(sourcePath, destinationPath, cacheDir, destinationPath);
     } catch {
       return 'missing';
     }

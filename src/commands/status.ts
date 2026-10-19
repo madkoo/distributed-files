@@ -14,30 +14,56 @@ import {
 } from '../sync';
 import type { ManifestEntry, StatusResult } from '../types';
 
-function collectDirectoryEntries(rootDir: string, currentDir: string, entries: string[]): void {
-  const children = fs.readdirSync(currentDir, { withFileTypes: true });
+function collectDirectoryEntries(
+  rootDir: string,
+  currentDir: string,
+  containmentRoot: string,
+  entries: string[],
+  activeDirectories: Set<string>,
+): void {
+  const canonicalDir = assertPathWithin(
+    currentDir,
+    containmentRoot,
+    `Directory path "${currentDir}"`,
+  );
+  if (activeDirectories.has(canonicalDir)) {
+    throw new Error(`Directory "${currentDir}" contains a circular symbolic link.`);
+  }
 
-  for (const child of children) {
-    const absolutePath = path.join(currentDir, child.name);
+  activeDirectories.add(canonicalDir);
+  const children = fs.readdirSync(canonicalDir, { withFileTypes: true });
 
-    if (child.isDirectory()) {
-      collectDirectoryEntries(rootDir, absolutePath, entries);
-      continue;
+  try {
+    for (const child of children) {
+      const absolutePath = path.join(currentDir, child.name);
+      const canonicalPath = assertPathWithin(
+        absolutePath,
+        containmentRoot,
+        `Directory entry "${absolutePath}"`,
+      );
+      const stats = fs.statSync(canonicalPath);
+
+      if (stats.isDirectory()) {
+        collectDirectoryEntries(rootDir, absolutePath, containmentRoot, entries, activeDirectories);
+        continue;
+      }
+
+      if (!stats.isFile()) {
+        continue;
+      }
+
+      const relativePath = path.relative(rootDir, absolutePath).split(path.sep).join('/');
+      const digest = fileHash(canonicalPath) ?? '';
+      entries.push(`${relativePath}:${digest}`);
     }
-
-    if (!child.isFile()) {
-      continue;
-    }
-
-    const relativePath = path.relative(rootDir, absolutePath).split(path.sep).join('/');
-    const digest = fileHash(absolutePath) ?? '';
-    entries.push(`${relativePath}:${digest}`);
+  } finally {
+    activeDirectories.delete(canonicalDir);
   }
 }
 
-function directoryHash(dir: string): string {
+function directoryHash(dir: string, containmentRoot: string): string {
   const pairs: string[] = [];
-  collectDirectoryEntries(dir, dir, pairs);
+  collectDirectoryEntries(dir, dir, containmentRoot, pairs, new Set());
   pairs.sort();
 
   const combined = pairs.join('\n');
@@ -159,9 +185,13 @@ export function determineState(entry: ManifestEntry): StatusResult['state'] {
       return 'missing';
     }
 
-    const sourceDigest = directoryHash(sourcePath);
-    const destinationDigest = directoryHash(destinationPath);
-    return sourceDigest === destinationDigest ? 'current' : 'outdated';
+    try {
+      const sourceDigest = directoryHash(sourcePath, cacheDir);
+      const destinationDigest = directoryHash(destinationPath, destinationPath);
+      return sourceDigest === destinationDigest ? 'current' : 'outdated';
+    } catch {
+      return 'missing';
+    }
   }
 
   return 'missing';

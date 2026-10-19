@@ -10,6 +10,7 @@ vi.mock('../src/cache', () => ({
 
 import { getCacheDir } from '../src/cache';
 import { determineState } from '../src/commands/status';
+import { syncEntry } from '../src/sync';
 import type { ManifestEntry } from '../src/types';
 
 // ---------------------------------------------------------------------------
@@ -106,6 +107,22 @@ describe('determineState (glob patterns)', () => {
     );
   });
 
+  it('returns missing when a matched destination path escapes through a symlink', () => {
+    const cacheDir = makeTempDir();
+    const destDir = makeTempDir();
+    const outsideDir = makeTempDir();
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(path.join(cacheDir, 'skills/canvas/external'), { recursive: true });
+    fs.writeFileSync(path.join(cacheDir, 'skills/canvas/external/file.md'), '# Skill');
+    fs.writeFileSync(path.join(outsideDir, 'file.md'), '# Skill');
+    fs.symlinkSync(outsideDir, path.join(destDir, 'external'), 'dir');
+
+    expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
+      'missing',
+    );
+  });
+
   it('returns outdated when a nested file differs', () => {
     const cacheDir = makeTempDir();
     const destDir = makeTempDir();
@@ -121,5 +138,110 @@ describe('determineState (glob patterns)', () => {
     expect(determineState(makeEntry({ source: 'skills/canvas/**', destination: destDir }))).toBe(
       'outdated',
     );
+  });
+});
+
+describe('determineState (path validation)', () => {
+  it('returns missing when a directory source contains a symlink outside the cache', () => {
+    const cacheDir = makeTempDir();
+    const destDir = makeTempDir();
+    const outsideDir = makeTempDir();
+    const sourceDir = path.join(cacheDir, 'source');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.writeFileSync(path.join(outsideDir, 'external.txt'), 'external content');
+    fs.symlinkSync(path.join(outsideDir, 'external.txt'), path.join(sourceDir, 'external.txt'));
+
+    expect(determineState(makeEntry({ source: 'source', destination: destDir }))).toBe('missing');
+  });
+
+  it('returns missing when a source symlink resolves outside the cache', () => {
+    const cacheDir = makeTempDir();
+    const destDir = makeTempDir();
+    const outsideDir = makeTempDir();
+    const outsideFile = path.join(outsideDir, 'source.txt');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.writeFileSync(outsideFile, 'external content');
+    fs.symlinkSync(outsideFile, path.join(cacheDir, 'source.txt'), 'file');
+
+    expect(determineState(makeEntry({ source: 'source.txt', destination: destDir }))).toBe(
+      'missing',
+    );
+  });
+
+  it('returns missing when a destination symlink points outside its parent', () => {
+    const cacheDir = makeTempDir();
+    const destDir = makeTempDir();
+    const outsideDir = makeTempDir();
+    const destination = path.join(destDir, 'source.txt');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.writeFileSync(path.join(cacheDir, 'source.txt'), 'source content');
+    fs.writeFileSync(path.join(outsideDir, 'target.txt'), 'source content');
+    fs.symlinkSync(path.join(outsideDir, 'target.txt'), destination, 'file');
+
+    expect(determineState(makeEntry({ source: 'source.txt', destination }))).toBe('missing');
+  });
+
+  it('returns missing when a missing destination has an escaping symlink ancestor', () => {
+    const cacheDir = makeTempDir();
+    const destinationParent = makeTempDir();
+    const outsideDir = makeTempDir();
+    const destination = path.join(destinationParent, 'external/source.txt');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.writeFileSync(path.join(cacheDir, 'source.txt'), 'source content');
+    fs.symlinkSync(outsideDir, path.join(destinationParent, 'external'), 'dir');
+
+    expect(determineState(makeEntry({ source: 'source.txt', destination }))).toBe('missing');
+  });
+});
+
+describe('determineState (directory symlinks)', () => {
+  it('returns current after syncing an internal file symlink', async () => {
+    const cacheDir = makeTempDir();
+    const destination = path.join(makeTempDir(), 'assets');
+    const sourceDir = path.join(cacheDir, 'assets');
+    const entry = makeEntry({ source: 'assets', destination });
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.writeFileSync(path.join(sourceDir, 'target.txt'), 'file content');
+    fs.symlinkSync(path.join(sourceDir, 'target.txt'), path.join(sourceDir, 'alias.txt'), 'file');
+
+    await syncEntry(entry, cacheDir);
+
+    expect(determineState(entry)).toBe('current');
+  });
+
+  it('returns current after syncing an internal directory symlink', async () => {
+    const cacheDir = makeTempDir();
+    const destination = path.join(makeTempDir(), 'assets');
+    const sourceDir = path.join(cacheDir, 'assets');
+    const targetDir = path.join(sourceDir, 'target');
+    const entry = makeEntry({ source: 'assets', destination });
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(path.join(targetDir, 'file.txt'), 'file content');
+    fs.symlinkSync(targetDir, path.join(sourceDir, 'alias'), 'dir');
+
+    await syncEntry(entry, cacheDir);
+
+    expect(determineState(entry)).toBe('current');
+  });
+
+  it('returns missing when a directory contains a circular symlink', () => {
+    const cacheDir = makeTempDir();
+    const destination = makeTempDir();
+    const sourceDir = path.join(cacheDir, 'assets');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.symlinkSync(sourceDir, path.join(sourceDir, 'loop'), 'dir');
+
+    expect(determineState(makeEntry({ source: 'assets', destination }))).toBe('missing');
   });
 });

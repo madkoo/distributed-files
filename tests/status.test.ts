@@ -10,6 +10,7 @@ vi.mock('../src/cache', () => ({
 
 import { getCacheDir } from '../src/cache';
 import { determineState } from '../src/commands/status';
+import { syncEntry } from '../src/sync';
 import type { ManifestEntry } from '../src/types';
 
 // ---------------------------------------------------------------------------
@@ -195,5 +196,52 @@ describe('determineState (path validation)', () => {
     fs.symlinkSync(outsideDir, path.join(destinationParent, 'external'), 'dir');
 
     expect(determineState(makeEntry({ source: 'source.txt', destination }))).toBe('missing');
+  });
+});
+
+describe('determineState (directory symlinks)', () => {
+  it('returns current after syncing an internal file symlink', async () => {
+    const cacheDir = makeTempDir();
+    const destination = path.join(makeTempDir(), 'assets');
+    const sourceDir = path.join(cacheDir, 'assets');
+    const entry = makeEntry({ source: 'assets', destination });
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.writeFileSync(path.join(sourceDir, 'target.txt'), 'file content');
+    fs.symlinkSync(path.join(sourceDir, 'target.txt'), path.join(sourceDir, 'alias.txt'), 'file');
+
+    await syncEntry(entry, cacheDir);
+
+    expect(determineState(entry)).toBe('current');
+  });
+
+  it('returns current after syncing an internal directory symlink', async () => {
+    const cacheDir = makeTempDir();
+    const destination = path.join(makeTempDir(), 'assets');
+    const sourceDir = path.join(cacheDir, 'assets');
+    const targetDir = path.join(sourceDir, 'target');
+    const entry = makeEntry({ source: 'assets', destination });
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(path.join(targetDir, 'file.txt'), 'file content');
+    fs.symlinkSync(targetDir, path.join(sourceDir, 'alias'), 'dir');
+
+    await syncEntry(entry, cacheDir);
+
+    expect(determineState(entry)).toBe('current');
+  });
+
+  it('returns missing when a directory contains a circular symlink', () => {
+    const cacheDir = makeTempDir();
+    const destination = makeTempDir();
+    const sourceDir = path.join(cacheDir, 'assets');
+    vi.mocked(getCacheDir).mockReturnValue(cacheDir);
+
+    fs.mkdirSync(sourceDir);
+    fs.symlinkSync(sourceDir, path.join(sourceDir, 'loop'), 'dir');
+
+    expect(determineState(makeEntry({ source: 'assets', destination }))).toBe('missing');
   });
 });

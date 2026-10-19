@@ -141,6 +141,62 @@ export function assertDirectoryCopyPaths(
   }
 }
 
+function copyDirectoryContents(
+  sourceDir: string,
+  destinationDir: string,
+  sourceRoot: string,
+  destinationRoot: string,
+  activeDirectories = new Set<string>(),
+): void {
+  const canonicalSourceDir = assertPathWithin(sourceDir, sourceRoot, `Source path "${sourceDir}"`);
+  const canonicalDestinationDir = assertPathWithin(
+    destinationDir,
+    destinationRoot,
+    `Destination path "${destinationDir}"`,
+  );
+
+  if (activeDirectories.has(canonicalSourceDir)) {
+    throw new Error(`Source directory "${sourceDir}" contains a circular symbolic link.`);
+  }
+
+  activeDirectories.add(canonicalSourceDir);
+  fs.mkdirSync(canonicalDestinationDir, { recursive: true });
+
+  try {
+    for (const entry of fs.readdirSync(canonicalSourceDir, { withFileTypes: true })) {
+      const sourcePath = path.join(canonicalSourceDir, entry.name);
+      const destinationPath = path.join(canonicalDestinationDir, entry.name);
+      const canonicalSourcePath = assertPathWithin(
+        sourcePath,
+        sourceRoot,
+        `Source path "${sourcePath}"`,
+      );
+      const canonicalDestinationPath = assertPathWithin(
+        destinationPath,
+        destinationRoot,
+        `Destination path "${destinationPath}"`,
+      );
+      const stats = fs.statSync(canonicalSourcePath);
+
+      if (stats.isDirectory()) {
+        copyDirectoryContents(
+          canonicalSourcePath,
+          canonicalDestinationPath,
+          sourceRoot,
+          destinationRoot,
+          activeDirectories,
+        );
+      } else if (stats.isFile()) {
+        fs.copyFileSync(canonicalSourcePath, canonicalDestinationPath);
+      } else {
+        throw new Error(`Source path "${sourcePath}" cannot be copied.`);
+      }
+    }
+  } finally {
+    activeDirectories.delete(canonicalSourceDir);
+  }
+}
+
 /**
  * Returns SHA-256 hash of file contents, or null if file doesn't exist.
  */
@@ -282,7 +338,7 @@ export async function syncEntry(
       `Destination path "${entry.destination}"`,
     );
     assertDirectoryCopyPaths(sourceToCopy, destinationToCopy, cacheDir, destinationToCopy);
-    fs.cpSync(sourceToCopy, destinationToCopy, { recursive: true });
+    copyDirectoryContents(sourceToCopy, destinationToCopy, cacheDir, destinationToCopy);
     return 'updated';
   }
 

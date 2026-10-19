@@ -347,6 +347,32 @@ describe('syncEntry (path validation)', () => {
     expect(fs.readFileSync(path.join(destination, 'nested/file.txt'), 'utf8')).toBe('file content');
   });
 
+  it('copies internal symlinks as files so repeated directory syncs stay within the destination', async () => {
+    const cacheDir = makeTempDir();
+    const destinationParent = makeTempDir();
+    const sourceDir = path.join(cacheDir, 'assets');
+    const destination = path.join(destinationParent, 'assets');
+    const target = path.join(sourceDir, 'target.txt');
+
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.writeFileSync(target, 'file content');
+    fs.symlinkSync(target, path.join(sourceDir, 'alias.txt'), 'file');
+
+    const entry = {
+      id: 'test',
+      repo: 'https://github.com/org/repo',
+      branch: 'main',
+      source: 'assets',
+      destination,
+    };
+
+    await syncEntry(entry, cacheDir);
+    await expect(syncEntry(entry, cacheDir)).resolves.toBe('updated');
+
+    expect(fs.lstatSync(path.join(destination, 'alias.txt')).isFile()).toBe(true);
+    expect(fs.readFileSync(path.join(destination, 'alias.txt'), 'utf8')).toBe('file content');
+  });
+
   it('rejects directory copies through a destination symlink ancestor', async () => {
     const cacheDir = makeTempDir();
     const destination = makeTempDir();

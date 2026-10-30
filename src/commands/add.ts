@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import { requireManifest, saveManifest } from '../config';
+import { getGlobalDfilesDir, requireManifest, resolvePath, saveManifest } from '../config';
 import type { ManifestEntry } from '../types';
 
 interface AddOptions {
@@ -48,13 +48,15 @@ export async function addCommand(
   options: AddOptions,
 ): Promise<void> {
   const { dir, manifest } = requireManifest();
+  const resolvedDestination = dir === getGlobalDfilesDir() ? resolvePath(destination) : destination;
 
   if (!isPlausibleRepoUrl(repo)) {
     throw new Error('Repository must start with "https://" or "git@".');
   }
 
   const duplicate = manifest.entries.find(
-    (entry) => entry.repo === repo && entry.source === source && entry.destination === destination,
+    (entry) =>
+      entry.repo === repo && entry.source === source && entry.destination === resolvedDestination,
   );
 
   if (duplicate) {
@@ -74,11 +76,11 @@ export async function addCommand(
     repo,
     branch: options.branch || 'main',
     source,
-    destination,
+    destination: resolvedDestination,
   };
 
   manifest.entries.push(newEntry);
   saveManifest(dir, manifest);
 
-  console.log(`Added entry '${id}': ${source} from ${repo} → ${destination}`);
+  console.log(`Added entry '${id}': ${source} from ${repo} → ${resolvedDestination}`);
 }

@@ -56,7 +56,10 @@ export async function addCommand(
 
   const duplicate = manifest.entries.find(
     (entry) =>
-      entry.repo === repo && entry.source === source && entry.destination === resolvedDestination,
+      entry.repo === repo &&
+      entry.source === source &&
+      (dir === getGlobalDfilesDir() ? resolvePath(entry.destination) : entry.destination) ===
+        resolvedDestination,
   );
 
   if (duplicate) {

@@ -13,17 +13,34 @@ Keeping dotfiles, skills, and small config files in sync across machines is anno
 - Node.js >= 16.7.0
 - Git
 
-### Install locally (from this repo)
+### Install from this repository
+
+Build the CLI before installing it globally from a checkout:
 
 ```bash
+npm ci
+npm run build
 npm install -g .
 ```
 
-### Install published package
+### Install the published package
 
 ```bash
 npm install -g @madkoo/dfiles
 ```
+
+Global npm executables use npm's global bin directory:
+
+- macOS and Linux: `<prefix>/bin`
+- Windows: `<prefix>`
+
+`npm prefix -g` prints `<prefix>`. Add the matching directory to your `PATH` (`Path` on
+Windows) if it is not already there. Open a new terminal after you change it.
+
+After global installation, you can run `dfiles` from any directory. Commands that use a
+manifest (`add`, `pull`, `status`, `list`, and `remove`) still need `dfiles.json` in the
+current directory or one of its parent directories. `init` and `upgrade` do not need an
+existing manifest.
 
 ## Quick start
 

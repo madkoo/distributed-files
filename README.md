@@ -22,7 +22,7 @@ npm install -g .
 ### Install published package
 
 ```bash
-npm install -g dfiles
+npm install -g @madkoo/dfiles
 ```
 
 ## Quick start
@@ -59,6 +59,7 @@ dfiles status
 | `dfiles add <repo> <source> <destination>` | Add a tracked file or directory from a remote repository. | `--branch <branch>` (default: `main`), `--id <id>` |
 | `dfiles pull [ids...]` | Fetch updates from remotes and sync tracked entries (all by default). | `ids...` (optional), `--dry-run` |
 | `dfiles status` | Offline status check against cached state (`current`, `outdated`, `missing`). | none |
+| `dfiles upgrade` | Install the latest published version of dfiles globally. | none |
 | `dfiles list` | List tracked entries. | `--json` |
 | `dfiles remove <id>` | Remove a tracked entry from the manifest. | `id` (required) |
 

@@ -5,6 +5,7 @@ import { initCommand } from './commands/init';
 import { listCommand } from './commands/list';
 import { pullCommand } from './commands/pull';
 import { statusCommand } from './commands/status';
+import { upgradeCommand } from './commands/upgrade';
 import { requireManifest, saveManifest } from './config';
 
 const program = new Command();
@@ -59,6 +60,14 @@ program
   .description('Show which tracked files are current, outdated, or missing (offline)')
   .action(async () => {
     await statusCommand();
+  });
+
+// upgrade command
+program
+  .command('upgrade')
+  .description('Upgrade dfiles to the latest published version')
+  .action(async () => {
+    await upgradeCommand();
   });
 
 // list command

@@ -18,10 +18,11 @@ program
 // init command
 program
   .command('init')
-  .description('Initialize a new dfiles manifest in a directory')
+  .description('Initialize a dfiles manifest in a directory or in the global dfiles directory')
   .argument('[directory]', 'target directory (default: current directory)')
-  .action(async (directory: string | undefined) => {
-    await initCommand(directory);
+  .option('-g, --global', 'use the global manifest at ~/.dfiles/dfiles.json')
+  .action(async (directory: string | undefined, options: { global?: boolean }) => {
+    await initCommand(directory, options);
   });
 
 // add command

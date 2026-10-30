@@ -13,17 +13,35 @@ Keeping dotfiles, skills, and small config files in sync across machines is anno
 - Node.js >= 16.7.0
 - Git
 
-### Install locally (from this repo)
+### Install from this repository
+
+Build the CLI before installing it globally from a checkout:
 
 ```bash
+npm ci
+npm run build
 npm install -g .
 ```
 
-### Install published package
+### Install the published package
 
 ```bash
 npm install -g @madkoo/dfiles
 ```
+
+Global npm executables use npm's global bin directory:
+
+- macOS and Linux: `<prefix>/bin`
+- Windows: `<prefix>`
+
+`npm prefix -g` prints `<prefix>`. Add the matching directory to your `PATH` (`Path` on
+Windows) if it is not already there. Open a new terminal after you change it.
+
+Run `dfiles init --global` once to create a shared manifest at `~/.dfiles/dfiles.json`.
+Commands that use a manifest (`add`, `pull`, `status`, `list`, and `remove`) search the
+current directory and its parents first. If they find no local manifest, they use the
+global manifest. This lets you run these commands from any working directory. A local
+manifest takes precedence. `init` and `upgrade` do not need an existing manifest.
 
 ## Quick start
 
@@ -55,7 +73,7 @@ dfiles status
 
 | Command | Description | Options / Arguments |
 | --- | --- | --- |
-| `dfiles init [directory]` | Create a `dfiles.json` manifest in the target directory (default: current directory). | `directory` (optional) |
+| `dfiles init [directory] [--global]` | Create a project manifest (default) or the shared global manifest. | `directory` (optional), `--global` |
 | `dfiles add <repo> <source> <destination>` | Add a tracked file or directory from a remote repository. | `--branch <branch>` (default: `main`), `--id <id>` |
 | `dfiles pull [ids...]` | Fetch updates from remotes and sync tracked entries (all by default). | `ids...` (optional), `--dry-run` |
 | `dfiles status` | Offline status check against cached state (`current`, `outdated`, `missing`). | none |
@@ -94,6 +112,7 @@ Notes:
 - `source` is a path inside the remote repository.
 - `destination` is your local output path (supports `~`).
 - `dfiles.json` is discovered by walking up parent directories, similar to how Git finds `.git`.
+  If no local manifest exists, dfiles uses `~/.dfiles/dfiles.json`.
 
 ## How it works
 

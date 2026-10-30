@@ -5,6 +5,10 @@ import type { Manifest } from './types';
 
 export const MANIFEST_FILENAME = 'dfiles.json';
 
+export function getGlobalDfilesDir(): string {
+  return path.join(os.homedir(), '.dfiles');
+}
+
 /**
  * Replaces leading ~ with os.homedir(), then path.resolve().
  * This is the single cross-platform path normalizer used everywhere.
@@ -21,31 +25,39 @@ export function resolvePath(p: string): string {
 }
 
 /**
- * Walks up from process.cwd() checking for dfiles.json at each level.
- * Returns the directory path that contains dfiles.json, or null if not found.
- * Stops at filesystem root.
+ * Searches parent directories first, then the global ~/.dfiles directory.
+ * A local manifest takes precedence over the global manifest.
  */
 export function findManifestDir(): string | null {
   let current = process.cwd();
 
   while (true) {
-    const manifestPath = path.join(current, MANIFEST_FILENAME);
-    if (fs.existsSync(manifestPath)) {
-      try {
-        if (fs.statSync(manifestPath).isFile()) {
-          return current;
-        }
-      } catch {
-        // Ignore filesystem race conditions and continue walking upward.
-      }
+    if (hasManifest(current)) {
+      return current;
     }
 
     const parent = path.dirname(current);
     if (current === parent) {
-      return null;
+      break;
     }
 
     current = parent;
+  }
+
+  const globalDir = getGlobalDfilesDir();
+  return hasManifest(globalDir) ? globalDir : null;
+}
+
+function hasManifest(dir: string): boolean {
+  const manifestPath = path.join(dir, MANIFEST_FILENAME);
+  if (!fs.existsSync(manifestPath)) {
+    return false;
+  }
+
+  try {
+    return fs.statSync(manifestPath).isFile();
+  } catch {
+    return false;
   }
 }
 
@@ -122,7 +134,7 @@ export function requireManifest(): { dir: string; manifest: Manifest } {
   const dir = findManifestDir();
   if (!dir) {
     throw new Error(
-      `No ${MANIFEST_FILENAME} found in this directory or any parent directory. Run "dfiles init" in your project root first.`,
+      `No ${MANIFEST_FILENAME} found in this directory, any parent directory, or "${getGlobalDfilesDir()}". Run "dfiles init --global" to create a global manifest or "dfiles init" in your project root.`,
     );
   }
 

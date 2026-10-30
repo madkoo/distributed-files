@@ -14,7 +14,7 @@ const mockGit = {
   clone: vi.fn(),
 };
 
-vi.mock('simple-git', () => ({ default: vi.fn(() => mockGit) }));
+vi.mock('simple-git', () => ({ simpleGit: vi.fn(() => mockGit) }));
 
 import { CACHE_BASE, ensureCached, getCacheDir, getRepoHash } from '../src/cache';
 

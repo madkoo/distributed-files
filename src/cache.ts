@@ -1,8 +1,8 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import simpleGit from 'simple-git';
 import { getGlobalDfilesDir } from './config';
+import { simpleGit } from 'simple-git';
 
 export const CACHE_BASE = path.join(getGlobalDfilesDir(), 'cache');
 

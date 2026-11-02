@@ -6,6 +6,7 @@ on:
       - 'v*.*.*'
 
 permissions:
+  id-token: write  # Required for OIDC
   contents: read
 
 jobs:
@@ -46,7 +47,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
-          cache: 'npm'
+          package-manager-cache: false
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -59,7 +60,7 @@ jobs:
         run: npm pack
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.13.4",
+  "checkpoint_id": "01M66GK26MC1QWR19HT2ND0FV0",
+  "session_id": "152a13eb-933c-4930-9094-29cefe8055d4",
+  "strategy": "import",
+  "created_at": "2026-10-30T13:39:34.74Z",
+  "commit_sha": "8775f16e4fc65af2c51e31387be0f97c4c5213d1",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "agent": "Copilot CLI",
+  "model": "gpt-6-luna",
+  "checkpoint_transcript_start": 247,
+  "transcript_lines_at_start": 247,
+  "compact_transcript_start": 14,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "redaction": {
+    "replacements": 5819,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 15033,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "kind": "imported"
+}

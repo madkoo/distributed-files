@@ -1,0 +1,1 @@
+I want to be able ot use pull and status etc commnds from any working directory
